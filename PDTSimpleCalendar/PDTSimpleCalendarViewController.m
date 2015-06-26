@@ -80,6 +80,8 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 
 - (void)simpleCalendarCommonInit
 {
+	self.selectionMode = PDTSimpleCalendarSelectionModeRange;
+	
     self.overlayView = [[UILabel alloc] init];
     self.backgroundColor = [UIColor whiteColor];
     self.overlayTextColor = [UIColor blackColor];
@@ -210,6 +212,33 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
     }
 }
 
+- (void)dateRangeSelected:(NSDate *)date {
+	if (self.firstSelectedDate && self.secondSelectedDate) {
+		[[self cellForItemAtDate:self.firstSelectedDate] setSelected:NO];
+		[[self cellForItemAtDate:self.secondSelectedDate] setSelected:NO];
+		
+		self.firstSelectedDate = nil;
+		self.secondSelectedDate = nil;
+	}
+	
+	if (self.firstSelectedDate == nil) {
+		self.firstSelectedDate = date;
+		
+		[[self cellForItemAtDate:self.firstSelectedDate] setSelected:YES];
+	}
+	else {
+		self.secondSelectedDate = date;
+		
+		[[self cellForItemAtDate:self.secondSelectedDate] setSelected:YES];
+	}
+	
+	[self.collectionView reloadData];
+
+	if ([self.delegate respondsToSelector:@selector(simpleCalendarViewController:didSelectDate:)]) {
+		[self.delegate simpleCalendarViewController:self didSelectDate:date];
+	}
+}
+
 //Deprecated, You need to use setSelectedDate: and call scrollToDate:animated: or scrollToSelectedDate:animated:
 //TODO: Remove this in next release
 - (void)setSelectedDate:(NSDate *)newSelectedDate animated:(BOOL)animated
@@ -316,6 +345,17 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
     return (rangeOfWeeks.length * self.daysPerWeek);
 }
 
+- (BOOL)date:(NSDate *)nowdate isBetweenDate:(NSDate *)raceStartDate andDate:(NSDate *)raceEndDate
+{
+	if ([nowdate compare:raceStartDate] == NSOrderedAscending)
+		return NO;
+	
+	if ([nowdate compare:raceEndDate] == NSOrderedDescending)
+		return NO;
+	
+	return YES;
+}
+
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -335,7 +375,32 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
     BOOL isCustomDate = NO;
 
     if (cellDateComponents.month == firstOfMonthsComponents.month) {
-        isSelected = ([self isSelectedDate:cellDate] && (indexPath.section == [self sectionForDate:cellDate]));
+		
+		if (self.selectionMode == PDTSimpleCalendarSelectionModeSingle) {
+			isSelected = ([self isSelectedDate:cellDate] && (indexPath.section == [self sectionForDate:cellDate]));
+		}
+		else {
+			if ((!self.firstSelectedDate && !self.secondSelectedDate) || indexPath.section != [self sectionForDate:cellDate]) {
+				isSelected = NO;
+			}
+			else {
+				if (self.firstSelectedDate && self.secondSelectedDate) {
+					isSelected =
+						[self date:cellDate isBetweenDate:self.firstSelectedDate andDate:self.secondSelectedDate] ||
+						[self date:cellDate isBetweenDate:self.secondSelectedDate andDate:self.firstSelectedDate];
+				}
+				else {
+					if (self.firstSelectedDate && [self clampAndCompareDate:cellDate withReferenceDate:self.firstSelectedDate]) {
+						isSelected = YES;
+					}
+					
+					if (self.secondSelectedDate && [self clampAndCompareDate:cellDate withReferenceDate:self.secondSelectedDate]) {
+						isSelected = YES;
+					}
+				}
+			}
+		}
+		
         isToday = [self isTodayDate:cellDate];
         [cell setDate:cellDate calendar:self.calendar];
 
@@ -390,7 +455,14 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    self.selectedDate = [self dateForCellAtIndexPath:indexPath];
+	NSDate *date = [self dateForCellAtIndexPath:indexPath];
+	
+	if (self.selectionMode == PDTSimpleCalendarSelectionModeSingle) {
+		self.selectedDate = date;
+	}
+	else {
+		[self dateRangeSelected:date];
+	}
 }
 
 
@@ -424,7 +496,7 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset
 {
     //We only display the overlay view if there is a vertical velocity
-    if ( fabsf(velocity.y) > 0.0f) {
+    if ( fabs(velocity.y) > 0.0f) {
         if (self.overlayView.alpha < 1.0) {
             [UIView animateWithDuration:0.25 animations:^{
                 [self.overlayView setAlpha:1.0];
@@ -473,10 +545,17 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 
 - (BOOL)isSelectedDate:(NSDate *)date
 {
-    if (!self.selectedDate) {
+    if ((!self.selectedDate && self.selectionMode == PDTSimpleCalendarSelectionModeSingle) ||
+		(!self.firstSelectedDate && !self.secondSelectedDate && self.selectionMode == PDTSimpleCalendarSelectionModeRange)) {
         return NO;
     }
-    return [self clampAndCompareDate:date withReferenceDate:self.selectedDate];
+	
+	if (self.selectionMode == PDTSimpleCalendarSelectionModeSingle) {
+		return [self clampAndCompareDate:date withReferenceDate:self.selectedDate];
+	}
+	else {
+		return [self clampAndCompareDate:date withReferenceDate:self.firstSelectedDate] || [self clampAndCompareDate:date withReferenceDate:self.secondSelectedDate];
+	}
 }
 
 - (BOOL)isEnabledDate:(NSDate *)date

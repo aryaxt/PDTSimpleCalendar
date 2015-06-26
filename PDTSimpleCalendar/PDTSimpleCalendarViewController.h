@@ -8,12 +8,22 @@
 
 #import <UIKit/UIKit.h>
 
+typedef NS_ENUM(NSUInteger, PDTSimpleCalendarSelectionMode) {
+	PDTSimpleCalendarSelectionModeSingle,
+	PDTSimpleCalendarSelectionModeRange
+};
+
 @protocol PDTSimpleCalendarViewDelegate;
 
 /**
  *  `PDTSimpleCalendarViewController` is a `UICollectionViewController` subclass that displays a scrollable calendar view inspired by iOS7 Apple Cal App.
  */
 @interface PDTSimpleCalendarViewController : UICollectionViewController <UICollectionViewDelegateFlowLayout>
+
+/**
+ *  Selection mode allows selecting a single date or a date range
+ */
+@property (nonatomic, assign) PDTSimpleCalendarSelectionMode selectionMode;
 
 /** @name Calendar Setup */
 
@@ -37,11 +47,21 @@
 @property (nonatomic, strong) NSDate *lastDate;
 
 /**
- *  Selected date displayed by the calendar.
+ *  Selected date displayed by the calendar in PDTSimpleCalendarSelectionModeSingle mode.
  *  Changing this value will not cause the calendar to scroll to this date.
  *  You need to manually call scrollToSelectedDate:(BOOL)animated if you want this behavior.
  */
 @property (nonatomic, strong) NSDate *selectedDate;
+
+/**
+ *  First selected date displayed by the calendar in PDTSimpleCalendarSelectionModeRange mode.
+ */
+@property (nonatomic, strong) NSDate *firstSelectedDate;
+
+/**
+ *  Second selected date displayed by the calendar in PDTSimpleCalendarSelectionModeRange mode.
+ */
+@property (nonatomic, strong) NSDate *secondSelectedDate;
 
 /** @name Customizing Appearance */
 

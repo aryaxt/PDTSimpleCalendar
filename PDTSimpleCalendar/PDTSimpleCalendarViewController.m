@@ -80,7 +80,7 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 
 - (void)simpleCalendarCommonInit
 {
-	self.selectionMode = PDTSimpleCalendarSelectionModeRange;
+	self.selectionMode = PDTSimpleCalendarSelectionModeSingle;
 	
     self.overlayView = [[UILabel alloc] init];
     self.backgroundColor = [UIColor whiteColor];
@@ -320,13 +320,18 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
     [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[overlayView(==overlayViewHeight)]" options:NSLayoutFormatAlignAllTop metrics:metricsDictionary views:viewsDictionary]];
 }
 
-#pragma mark - Rotation Handling
-
-- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
-{
-    [self.collectionView.collectionViewLayout invalidateLayout];
+- (void)viewDidLayoutSubviews {
+	[super viewDidLayoutSubviews];
+	
+	CGFloat itemWidth = floorf(CGRectGetWidth(self.collectionView.bounds) / self.daysPerWeek);
+	CGSize newSize = CGSizeMake(itemWidth, itemWidth);
+	UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *) self.collectionView.collectionViewLayout;
+	
+	if (!CGSizeEqualToSize(layout.itemSize, newSize)) {
+		layout.itemSize = newSize;
+		[self.collectionViewLayout invalidateLayout];
+	}
 }
-
 
 #pragma mark - Collection View Data Source
 
@@ -480,15 +485,6 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
     }
 
     return nil;
-}
-
-#pragma mark - UICollectionViewFlowLayoutDelegate
-
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
-{
-    CGFloat itemWidth = floorf(CGRectGetWidth(self.collectionView.bounds) / self.daysPerWeek);
-
-    return CGSizeMake(itemWidth, itemWidth);
 }
 
 #pragma mark - UIScrollViewDelegate

@@ -133,12 +133,21 @@ typedef NS_ENUM(NSUInteger, PDTSimpleCalendarSelectionMode) {
 - (BOOL)simpleCalendarViewController:(PDTSimpleCalendarViewController *)controller isEnabledDate:(NSDate *)date;
 
 /**
- *  Tells the delegate that a date was selected by the user.
+ *  Tells the delegate that a date was selected by the user in PDTSimpleCalendarSelectionModeSingle mode.
  *
  *  @param controller the calendarView Controller
  *  @param date       the date being selected (Midnight GMT).
  */
 - (void)simpleCalendarViewController:(PDTSimpleCalendarViewController *)controller didSelectDate:(NSDate *)date;
+
+/**
+ *  Tells the delegate that a date was selected by the user in PDTSimpleCalendarSelectionModeRange mode.
+ *
+ *  @param controller the calendarView Controller
+ *  @param firstDate  first date in selected date range
+ *  @param secondDate second date in selected date range
+ */
+- (void)simpleCalendarViewController:(PDTSimpleCalendarViewController *)controller didSelectFirstDate:(NSDate *)firstDate andSecondDate:(NSDate *)secondDate;
 
 /** @name Color Customization */
 

@@ -223,19 +223,22 @@ static NSString *PDTSimpleCalendarViewHeaderIdentifier = @"com.producteev.collec
 	
 	if (self.firstSelectedDate == nil) {
 		self.firstSelectedDate = date;
-		
-		[[self cellForItemAtDate:self.firstSelectedDate] setSelected:YES];
 	}
 	else {
-		self.secondSelectedDate = date;
-		
-		[[self cellForItemAtDate:self.secondSelectedDate] setSelected:YES];
+		// Rearrange first an second date so that they are in ascending order
+		if ([date compare:self.firstSelectedDate] == NSOrderedAscending) {
+			self.secondSelectedDate = self.firstSelectedDate;
+			self.firstSelectedDate = date;
+		}
+		else {
+			self.secondSelectedDate = date;
+		}
 	}
 	
 	[self.collectionView reloadData];
 
-	if ([self.delegate respondsToSelector:@selector(simpleCalendarViewController:didSelectDate:)]) {
-		[self.delegate simpleCalendarViewController:self didSelectDate:date];
+	if ([self.delegate respondsToSelector:@selector(simpleCalendarViewController:didSelectFirstDate:andSecondDate:)]) {
+		[self.delegate simpleCalendarViewController:self didSelectFirstDate:self.firstSelectedDate andSecondDate:self.secondSelectedDate];
 	}
 }
 
